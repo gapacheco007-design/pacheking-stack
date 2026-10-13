@@ -1,0 +1,67 @@
+# Docker Compose oficial de la Estación de Descargas PacheKing
+# Servicios: Aria2-Pro, AriaNg, MeTube, FileBrowser
+
+services:
+  aria2:
+    image: p3terx/aria2-pro:latest
+    container_name: aria2
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      - PUID=0
+      - PGID=0
+      - UMASK_SET=022
+      - RPC_SECRET=1d0d8b3a3a52f684e6740180b134d6d8
+      - RPC_PORT=6800
+      - LISTEN_PORT=6888
+      - SPECIAL_MODE=rclone
+      - DOWNLOAD_DIR=/downloads
+      - CUSTOM_TRACKER_URL=https://cf.trackerslist.com/all.txt
+    volumes:
+      - ./config/aria2:/config
+      - ./downloads:/downloads
+      - ./scripts:/scripts
+    ports:
+      - "6800:6800"
+      - "6888:6888"
+      - "6888:6888/udp"
+
+  ariang:
+    image: p3terx/ariang:latest
+    container_name: ariang
+    restart: unless-stopped
+    ports:
+      - "6880:6880"
+    depends_on:
+      - aria2
+
+  metube:
+    image: ghcr.io/alexta69/metube:latest
+    container_name: metube
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - UID=0
+      - GID=0
+      - DOWNLOAD_DIR=/downloads
+      - AUDIO_DOWNLOAD_DIR=/downloads
+      - CUSTOM_DIRS=false
+      - CREATE_SUBDIRECTORIES=false
+    volumes:
+      - ./downloads:/downloads
+
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: filebrowser
+    restart: unless-stopped
+    user: "0:0"
+    ports:
+      - "8080:80"
+    volumes:
+      - ./downloads:/srv
+      - ./config/filebrowser/filebrowser.db:/database/filebrowser.db
